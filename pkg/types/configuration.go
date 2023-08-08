@@ -68,6 +68,9 @@ type Configuration struct {
 
 	// Endpoints maintains a list of endpoints the user would like to listen to
 	Endpoints []string
+
+	// Pidfile represents the pidfile where the user wanted to store the gvproxy pid
+	Pidfile string
 }
 
 type Protocol string

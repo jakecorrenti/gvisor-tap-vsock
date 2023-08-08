@@ -184,6 +184,8 @@ func main() {
 		if _, err := f.WriteString(strconv.Itoa(pid)); err != nil {
 			exitWithError(err)
 		}
+
+		config.Pidfile = pidFile
 	}
 
 	groupErrs.Go(func() error {
