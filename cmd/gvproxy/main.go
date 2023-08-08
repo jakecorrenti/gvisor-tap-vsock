@@ -156,16 +156,15 @@ func main() {
 
 	config.SetProtocol()
 
-	if c := len(forwardSocket); c != len(forwardDest) || c != len(forwardUser) || c != len(forwardIdentity) {
-		exitWithError(errors.New("-forward-sock, --forward-dest, --forward-user, and --forward-identity must all be specified together, " +
-			"the same number of times, or not at all"))
+	forwardInfo := map[string]types.ArrayFlags{
+		types.ForwardSocket:   forwardSocket,
+		types.ForwardDest:     forwardDest,
+		types.ForwardUser:     forwardUser,
+		types.ForwardIdentity: forwardIdentity,
 	}
 
-	for i := 0; i < len(forwardSocket); i++ {
-		_, err := os.Stat(forwardIdentity[i])
-		if err != nil {
-			exitWithError(errors.Wrapf(err, "Identity file %s can't be loaded", forwardIdentity[i]))
-		}
+	if err := config.AddForwardInfoFromCmdline(forwardInfo); err != nil {
+		exitWithError(err)
 	}
 
 	// Create a PID file if requested

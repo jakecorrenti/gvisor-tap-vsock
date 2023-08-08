@@ -15,6 +15,11 @@ const (
 	ListenBess   = "liten-bess"
 	ListenStdio  = "listen-stdio"
 	ListenVfkit  = "listen-vfkit"
+
+	ForwardSocket   = "forward-socket"
+	ForwardDest     = "forward-dest"
+	ForwardUser     = "forward-user"
+	ForwardIdentity = "forward-identity"
 )
 
 type Configuration struct {
@@ -71,6 +76,9 @@ type Configuration struct {
 
 	// Pidfile represents the pidfile where the user wanted to store the gvproxy pid
 	Pidfile string
+
+	// ForwardInfo maintains a map of the forward-xxx flag info from the commandline
+	ForwardInfo map[string]ArrayFlags
 }
 
 type Protocol string
@@ -225,4 +233,20 @@ func (c *Configuration) SetProtocol() {
 	}
 
 	c.Protocol = protocol
+}
+
+func (c *Configuration) AddForwardInfoFromCmdline(info map[string]ArrayFlags) error {
+	if c := len(info[ForwardSocket]); c != len(info[ForwardDest]) || c != len(info[ForwardUser]) || c != len(info[ForwardIdentity]) {
+		return errors.New("-forward-sock, -forward-dest, -forward-user, and -forward-identity must all be specified together, " +
+			"the same number of times, or not at all")
+	}
+
+	for i := 0; i < len(info[ForwardSocket]); i++ {
+		_, err := os.Stat(info[ForwardIdentity][i])
+		if err != nil {
+			return errors.Wrapf(err, "Identity file %s can't be loaded", info[ForwardIdentity][i])
+		}
+	}
+
+	return nil
 }
