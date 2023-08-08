@@ -201,3 +201,22 @@ func (c *Configuration) AddSocketsFromCmdline(sockets map[string]string) error {
 	c.Sockets = sockets
 	return nil
 }
+
+func (c *Configuration) SetProtocol() {
+	protocol := HyperKitProtocol
+	qemuSocket, qemuOk := c.Sockets[ListenQemu]
+	bessSocket, bessOk := c.Sockets[ListenBess]
+	vfkitSocket, vfkitOk := c.Sockets[ListenVfkit]
+
+	if qemuOk && qemuSocket != "" {
+		protocol = QemuProtocol
+	}
+	if bessOk && bessSocket != "" {
+		protocol = BessProtocol
+	}
+	if vfkitOk && vfkitSocket != "" {
+		protocol = VfkitProtocol
+	}
+
+	c.Protocol = protocol
+}

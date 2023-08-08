@@ -152,18 +152,8 @@ func main() {
 	if sshPort < 1024 || sshPort > 65535 {
 		exitWithError(errors.New("ssh-port value must be between 1024 and 65535"))
 	}
-	protocol := types.HyperKitProtocol
-	if qemuSocket != "" {
-		protocol = types.QemuProtocol
-	}
-	if bessSocket != "" {
-		protocol = types.BessProtocol
-	}
-	if vfkitSocket != "" {
-		protocol = types.VfkitProtocol
-	}
 
-	config.Protocol = protocol
+	config.SetProtocol()
 
 	if c := len(forwardSocket); c != len(forwardDest) || c != len(forwardUser) || c != len(forwardIdentity) {
 		exitWithError(errors.New("-forward-sock, --forward-dest, --forward-user, and --forward-identity must all be specified together, " +
