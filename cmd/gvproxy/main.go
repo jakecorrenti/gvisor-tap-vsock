@@ -145,7 +145,7 @@ func main() {
 	config.SetProtocol()
 
 	forwardInfo := map[string]types.ArrayFlags{
-		types.ForwardSocket:   forwardSocket,
+		types.ForwardSock:     forwardSocket,
 		types.ForwardDest:     forwardDest,
 		types.ForwardUser:     forwardUser,
 		types.ForwardIdentity: forwardIdentity,

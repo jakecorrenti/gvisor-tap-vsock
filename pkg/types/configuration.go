@@ -2,9 +2,11 @@ package types
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 	"net/url"
 	"os"
+	"os/exec"
 	"regexp"
 	"runtime"
 	"strings"
@@ -20,7 +22,7 @@ const (
 	ListenStdio  = "listen-stdio"
 	ListenVfkit  = "listen-vfkit"
 
-	ForwardSocket   = "forward-socket"
+	ForwardSock     = "forward-sock"
 	ForwardDest     = "forward-dest"
 	ForwardUser     = "forward-user"
 	ForwardIdentity = "forward-identity"
@@ -255,12 +257,12 @@ func (c *Configuration) SetProtocol() {
 }
 
 func (c *Configuration) AddForwardInfoFromCmdline(info map[string]ArrayFlags) error {
-	if c := len(info[ForwardSocket]); c != len(info[ForwardDest]) || c != len(info[ForwardUser]) || c != len(info[ForwardIdentity]) {
+	if c := len(info[ForwardSock]); c != len(info[ForwardDest]) || c != len(info[ForwardUser]) || c != len(info[ForwardIdentity]) {
 		return errors.New("-forward-sock, -forward-dest, -forward-user, and -forward-identity must all be specified together, " +
 			"the same number of times, or not at all")
 	}
 
-	for i := 0; i < len(info[ForwardSocket]); i++ {
+	for i := 0; i < len(info[ForwardSock]); i++ {
 		_, err := os.Stat(info[ForwardIdentity][i])
 		if err != nil {
 			return errors.Wrapf(err, "Identity file %s can't be loaded", info[ForwardIdentity][i])
@@ -268,6 +270,104 @@ func (c *Configuration) AddForwardInfoFromCmdline(info map[string]ArrayFlags) er
 	}
 
 	return nil
+}
+
+func (c *Configuration) ToCmdline() ([]string, error) {
+	args := []string{}
+
+	if c.Debug {
+		args = append(args, "-debug")
+	}
+
+	// forward dest
+	if forwardDest, ok := c.ForwardInfo[ForwardDest]; ok {
+		for _, dest := range forwardDest {
+			args = append(args, "-forward-dest "+dest)
+		}
+	}
+
+	// forward identity
+	if forwardIdentity, ok := c.ForwardInfo[ForwardIdentity]; ok {
+		for _, identity := range forwardIdentity {
+			args = append(args, "-forward-identity "+identity)
+		}
+	}
+
+	// forward sock
+	if forwardSock, ok := c.ForwardInfo[ForwardSock]; ok {
+		for _, sock := range forwardSock {
+			args = append(args, "-forward-sock "+sock)
+		}
+	}
+
+	// forward user
+	if forwardUser, ok := c.ForwardInfo[ForwardUser]; ok {
+		for _, user := range forwardUser {
+			args = append(args, "-forward-user "+user)
+		}
+	}
+
+	// listen (endpoints)
+	for _, endpoint := range c.Endpoints {
+		args = append(args, "-listen "+endpoint)
+	}
+
+	// listen qemu
+	if qemuSocket, ok := c.Sockets[ListenQemu]; ok {
+		if qemuSocket != "" {
+			args = append(args, "-listen-qemu "+qemuSocket)
+		}
+	}
+
+	// listen stdio
+	if stdioSocket, ok := c.Sockets[ListenStdio]; ok {
+		if stdioSocket != "" {
+			args = append(args, "-listen-stdio "+stdioSocket)
+		}
+	}
+
+	// listen vfkit
+	if vfkitSocket, ok := c.Sockets[ListenVfkit]; ok {
+		if vfkitSocket != "" {
+			args = append(args, "-listen-vfkit "+vfkitSocket)
+		}
+	}
+
+	// listen vpnkit
+	if vpnkitSocket, ok := c.Sockets[ListenVpnkit]; ok {
+		if vpnkitSocket != "" {
+			args = append(args, "-listen-vpnkit "+vpnkitSocket)
+		}
+	}
+
+	// listen bess
+	if bessSocket, ok := c.Sockets[ListenBess]; ok {
+		if bessSocket != "" {
+			args = append(args, "-listen-bess "+bessSocket)
+		}
+	}
+
+	// mtu
+	args = append(args, fmt.Sprintf("-mtu %d", c.MTU))
+
+	// pidfile
+	if c.Pidfile != "" {
+		args = append(args, "-pid-file "+c.Pidfile)
+	}
+
+	// sshport
+
+	return args, nil
+}
+
+func (c *Configuration) Cmd(gvproxyPath string) (*exec.Cmd, error) {
+	args, err := c.ToCmdline()
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := exec.Command(gvproxyPath, args...)
+	return cmd, nil
 }
 
 func searchDomains() []string {
