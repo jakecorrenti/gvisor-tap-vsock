@@ -123,9 +123,6 @@ func main() {
 			},
 		},
 		DNSSearchDomains: searchDomains(),
-		Forwards: map[string]string{
-			fmt.Sprintf("127.0.0.1:%d", sshPort): sshHostPort,
-		},
 		NAT: map[string]string{
 			hostIP: "127.0.0.1",
 		},
@@ -152,6 +149,9 @@ func main() {
 	// and the oft considered maximum port, return an error.
 	if sshPort < 1024 || sshPort > 65535 {
 		exitWithError(errors.New("ssh-port value must be between 1024 and 65535"))
+	}
+	config.Forwards = map[string]string{
+		fmt.Sprintf("127.0.0.1:%d", sshPort): sshHostPort,
 	}
 
 	config.SetProtocol()
