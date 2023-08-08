@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"flag"
 	"fmt"
@@ -11,7 +10,6 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -84,54 +82,44 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	config := types.Configuration{
-		Debug:             debug,
-		CaptureFile:       captureFile(),
-		MTU:               mtu,
-		Subnet:            "192.168.127.0/24",
-		GatewayIP:         gatewayIP,
-		GatewayMacAddress: "5a:94:ef:e4:0c:dd",
-		DHCPStaticLeases: map[string]string{
-			"192.168.127.2": "5a:94:ef:e4:0c:ee",
-		},
-		DNS: []types.Zone{
-			{
-				Name: "containers.internal.",
-				Records: []types.Record{
-					{
-						Name: gateway,
-						IP:   net.ParseIP(gatewayIP),
-					},
-					{
-						Name: host,
-						IP:   net.ParseIP(hostIP),
-					},
+	config := types.NewConfiguration()
+	config.Debug = debug
+	config.CaptureFile = captureFile()
+	config.MTU = mtu
+	config.GatewayIP = gatewayIP
+	config.DNS = []types.Zone{
+		{
+			Name: "containers.internal.",
+			Records: []types.Record{
+				{
+					Name: gateway,
+					IP:   net.ParseIP(gatewayIP),
 				},
-			},
-			{
-				Name: "docker.internal.",
-				Records: []types.Record{
-					{
-						Name: gateway,
-						IP:   net.ParseIP(gatewayIP),
-					},
-					{
-						Name: host,
-						IP:   net.ParseIP(hostIP),
-					},
+				{
+					Name: host,
+					IP:   net.ParseIP(hostIP),
 				},
 			},
 		},
-		DNSSearchDomains: searchDomains(),
-		NAT: map[string]string{
-			hostIP: "127.0.0.1",
+		{
+			Name: "docker.internal.",
+			Records: []types.Record{
+				{
+					Name: gateway,
+					IP:   net.ParseIP(gatewayIP),
+				},
+				{
+					Name: host,
+					IP:   net.ParseIP(hostIP),
+				},
+			},
 		},
-		GatewayVirtualIPs: []string{hostIP},
-		VpnKitUUIDMacAddresses: map[string]string{
-			"c3d68012-0208-11ea-9fd7-f2189899ab08": "5a:94:ef:e4:0c:ee",
-		},
-		Endpoints: endpoints,
 	}
+	config.NAT = map[string]string{
+		hostIP: "127.0.0.1",
+	}
+	config.GatewayVirtualIPs = []string{hostIP}
+	config.Endpoints = endpoints
 
 	sockets := map[string]string{
 		types.ListenVpnkit: vpnkitSocket,
@@ -453,29 +441,4 @@ func withProfiler(vn *virtualnetwork.VirtualNetwork) http.Handler {
 func exitWithError(err error) {
 	log.Error(err)
 	os.Exit(1)
-}
-
-func searchDomains() []string {
-	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
-		f, err := os.Open("/etc/resolv.conf")
-		if err != nil {
-			log.Errorf("open file error: %v", err)
-			return nil
-		}
-		defer f.Close()
-		sc := bufio.NewScanner(f)
-		searchPrefix := "search "
-		for sc.Scan() {
-			if strings.HasPrefix(sc.Text(), searchPrefix) {
-				searchDomains := strings.Split(strings.TrimPrefix(sc.Text(), searchPrefix), " ")
-				log.Debugf("Using search domains: %v", searchDomains)
-				return searchDomains
-			}
-		}
-		if err := sc.Err(); err != nil {
-			log.Errorf("scan file error: %v", err)
-			return nil
-		}
-	}
-	return nil
 }

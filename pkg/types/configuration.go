@@ -1,12 +1,16 @@
 package types
 
 import (
+	"bufio"
 	"net"
 	"net/url"
 	"os"
 	"regexp"
+	"runtime"
+	"strings"
 
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -117,6 +121,21 @@ func (i *ArrayFlags) String() string {
 func (i *ArrayFlags) Set(value string) error {
 	*i = append(*i, value)
 	return nil
+}
+
+// NewConfiguration is a default contstructor for the Configuration type
+func NewConfiguration() Configuration {
+	return Configuration{
+		Subnet:            "192.168.127.0/24",
+		GatewayMacAddress: "5a:94:ef:e4:0c:dd",
+		DHCPStaticLeases: map[string]string{
+			"192.168.127.2": "5a:94:ef:e4:0c:ee",
+		},
+		DNSSearchDomains: searchDomains(),
+		VpnKitUUIDMacAddresses: map[string]string{
+			"c3d68012-0208-11ea-9fd7-f2189899ab08": "5a:94:ef:e4:0c:ee",
+		},
+	}
 }
 
 // validateQemuSocket makes sure the qemu socket provided has proper syntax
@@ -248,5 +267,30 @@ func (c *Configuration) AddForwardInfoFromCmdline(info map[string]ArrayFlags) er
 		}
 	}
 
+	return nil
+}
+
+func searchDomains() []string {
+	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
+		f, err := os.Open("/etc/resolv.conf")
+		if err != nil {
+			log.Errorf("open file error: %v", err)
+			return nil
+		}
+		defer f.Close()
+		sc := bufio.NewScanner(f)
+		searchPrefix := "search "
+		for sc.Scan() {
+			if strings.HasPrefix(sc.Text(), searchPrefix) {
+				searchDomains := strings.Split(strings.TrimPrefix(sc.Text(), searchPrefix), " ")
+				log.Debugf("Using search domains: %v", searchDomains)
+				return searchDomains
+			}
+		}
+		if err := sc.Err(); err != nil {
+			log.Errorf("scan file error: %v", err)
+			return nil
+		}
+	}
 	return nil
 }
