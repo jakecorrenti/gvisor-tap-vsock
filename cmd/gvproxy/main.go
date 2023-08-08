@@ -31,16 +31,16 @@ import (
 var (
 	debug           bool
 	mtu             int
-	endpoints       arrayFlags
+	endpoints       types.ArrayFlags
 	vpnkitSocket    string
 	qemuSocket      string
 	bessSocket      string
 	stdioSocket     string
 	vfkitSocket     string
-	forwardSocket   arrayFlags
-	forwardDest     arrayFlags
-	forwardUser     arrayFlags
-	forwardIdentity arrayFlags
+	forwardSocket   types.ArrayFlags
+	forwardDest     types.ArrayFlags
+	forwardUser     types.ArrayFlags
+	forwardIdentity types.ArrayFlags
 	sshPort         int
 	pidFile         string
 	exitCode        int
@@ -247,17 +247,6 @@ func main() {
 		log.Error(err)
 		exitCode = 1
 	}
-}
-
-type arrayFlags []string
-
-func (i *arrayFlags) String() string {
-	return "my string representation"
-}
-
-func (i *arrayFlags) Set(value string) error {
-	*i = append(*i, value)
-	return nil
 }
 
 func captureFile() string {
