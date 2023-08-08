@@ -40,7 +40,7 @@ var (
 	forwardSocket   arrayFlags
 	forwardDest     arrayFlags
 	forwardUser     arrayFlags
-	forwardIdentify arrayFlags
+	forwardIdentity arrayFlags
 	sshPort         int
 	pidFile         string
 	exitCode        int
@@ -67,7 +67,7 @@ func main() {
 	flag.Var(&forwardSocket, "forward-sock", "Forwards a unix socket to the guest virtual machine over SSH")
 	flag.Var(&forwardDest, "forward-dest", "Forwards a unix socket to the guest virtual machine over SSH")
 	flag.Var(&forwardUser, "forward-user", "SSH user to use for unix socket forward")
-	flag.Var(&forwardIdentify, "forward-identity", "Path to SSH identity key for forwarding")
+	flag.Var(&forwardIdentity, "forward-identity", "Path to SSH identity key for forwarding")
 	flag.StringVar(&pidFile, "pid-file", "", "Generate a file with the PID in it")
 	flag.Parse()
 
@@ -145,15 +145,15 @@ func main() {
 		protocol = types.VfkitProtocol
 	}
 
-	if c := len(forwardSocket); c != len(forwardDest) || c != len(forwardUser) || c != len(forwardIdentify) {
+	if c := len(forwardSocket); c != len(forwardDest) || c != len(forwardUser) || c != len(forwardIdentity) {
 		exitWithError(errors.New("-forward-sock, --forward-dest, --forward-user, and --forward-identity must all be specified together, " +
 			"the same number of times, or not at all"))
 	}
 
 	for i := 0; i < len(forwardSocket); i++ {
-		_, err := os.Stat(forwardIdentify[i])
+		_, err := os.Stat(forwardIdentity[i])
 		if err != nil {
-			exitWithError(errors.Wrapf(err, "Identity file %s can't be loaded", forwardIdentify[i]))
+			exitWithError(errors.Wrapf(err, "Identity file %s can't be loaded", forwardIdentity[i]))
 		}
 	}
 
@@ -439,7 +439,7 @@ func run(ctx context.Context, g *errgroup.Group, configuration *types.Configurat
 		j := i
 		g.Go(func() error {
 			defer os.Remove(forwardSocket[j])
-			forward, err := sshclient.CreateSSHForward(ctx, src, dest, forwardIdentify[j], vn)
+			forward, err := sshclient.CreateSSHForward(ctx, src, dest, forwardIdentity[j], vn)
 			if err != nil {
 				return err
 			}
