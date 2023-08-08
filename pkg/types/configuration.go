@@ -65,6 +65,9 @@ type Configuration struct {
 
 	// Sockets is a map of the sockets provided by the user with format socket-type:socket
 	Sockets map[string]string
+
+	// Endpoints maintains a list of endpoints the user would like to listen to
+	Endpoints []string
 }
 
 type Protocol string

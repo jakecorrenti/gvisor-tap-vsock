@@ -133,6 +133,7 @@ func main() {
 		VpnKitUUIDMacAddresses: map[string]string{
 			"c3d68012-0208-11ea-9fd7-f2189899ab08": "5a:94:ef:e4:0c:ee",
 		},
+		Endpoints: endpoints,
 	}
 
 	sockets := map[string]string{
@@ -186,7 +187,7 @@ func main() {
 	}
 
 	groupErrs.Go(func() error {
-		return run(ctx, groupErrs, &config, endpoints)
+		return run(ctx, groupErrs, &config)
 	})
 
 	// Wait for something to happen
@@ -214,14 +215,14 @@ func captureFile() string {
 	return "capture.pcap"
 }
 
-func run(ctx context.Context, g *errgroup.Group, configuration *types.Configuration, endpoints []string) error {
+func run(ctx context.Context, g *errgroup.Group, configuration *types.Configuration) error {
 	vn, err := virtualnetwork.New(configuration)
 	if err != nil {
 		return err
 	}
 	log.Info("waiting for clients...")
 
-	for _, endpoint := range endpoints {
+	for _, endpoint := range configuration.Endpoints {
 		log.Infof("listening %s", endpoint)
 		ln, err := transport.Listen(endpoint)
 		if err != nil {
