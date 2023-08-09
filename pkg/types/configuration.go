@@ -85,6 +85,9 @@ type Configuration struct {
 
 	// ForwardInfo maintains a map of the forward-xxx flag info from the commandline
 	ForwardInfo map[string]ArrayFlags
+
+	// SSHPort to access the guest virtual machine. Must be between 1024 and 65535 (default 2222)
+	SSHPort int
 }
 
 type Protocol string
@@ -356,6 +359,7 @@ func (c *Configuration) ToCmdline() ([]string, error) {
 	}
 
 	// sshport
+	args = append(args, fmt.Sprintf("-ssh-port %d", c.SSHPort))
 
 	return args, nil
 }

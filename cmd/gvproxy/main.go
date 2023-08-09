@@ -138,6 +138,7 @@ func main() {
 	if sshPort < 1024 || sshPort > 65535 {
 		exitWithError(errors.New("ssh-port value must be between 1024 and 65535"))
 	}
+	config.SSHPort = sshPort
 	config.Forwards = map[string]string{
 		fmt.Sprintf("127.0.0.1:%d", sshPort): sshHostPort,
 	}
